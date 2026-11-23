@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Iqra School Office
 
-## Getting Started
+Fee records for the school admin office. Next.js (JavaScript only) + MongoDB Atlas.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill in:
+   - `MONGODB_URI` – Atlas connection string including the database name (e.g. `/iqra`).
+     In Atlas, allow your server's IP under Network Access.
+   - `ADMIN_PASSWORD` – password the office uses to sign in.
+   - `SESSION_SECRET` – at least 32 random characters (`openssl rand -base64 48`).
+   - `APP_TIMEZONE` – defaults to `Asia/Karachi`; decides what "this month" is.
+3. `npm run dev` for development, or `npm run build && npm start` for production.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pages
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/` – dashboard: total collected, collected this month, pending fees, students who have not paid this month.
+- `/students` – all students with paid / remaining totals, filters (name, student ID, father name, status) and pagination. Add a student from here.
+- `/students/[id]` – one student: edit details, record payments, add other fees (books, uniform, stationery…), payment history.
+- `/fees` – yearly calendar of monthly fees for every student. Click a month to record a payment for it.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How fees are calculated
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Admission fee**: one charge per student, entered when the student is added (total of admission, books, uniform, stationery).
+- **Other fees**: any number of extra charges per student.
+- **Monthly fees**: every month from the admission month up to the current month (or the month the student left) is due at the student's monthly fee. A month's record is created on its first payment and keeps the fee amount at that time; changing a student's monthly fee only affects months with no payment yet.
+- Payments can be partial and are never allowed to exceed what is due. Mistaken payments can be removed from the payment history.
