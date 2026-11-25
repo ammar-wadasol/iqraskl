@@ -19,7 +19,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 import Loading from "@/components/Loading";
 import { MonthCell, MonthLegend } from "@/components/MonthCell";
 import StudentActions from "@/components/StudentActions";
-import { deleteOtherFee } from "@/app/actions/fees";
+import { deleteOtherFee, deletePayment } from "@/app/actions/fees";
 import { getStudentDetail } from "@/lib/data";
 import { MONTHS, formatDate, formatMoney, monthLabel } from "@/lib/format";
 import { requireAdmin } from "@/lib/session";
@@ -312,6 +312,7 @@ async function StudentDetail({ params, searchParams }) {
                     <th>For</th>
                     <th>Note</th>
                     <th className="text-right">Amount</th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
@@ -321,6 +322,17 @@ async function StudentDetail({ params, searchParams }) {
                       <td>{paymentLabel(p)}</td>
                       <td className="text-slate-500">{p.note}</td>
                       <td className="text-right font-medium">{formatMoney(p.amount)}</td>
+                      <td className="text-right">
+                        <form action={deletePayment}>
+                          <input type="hidden" name="recordId" value={p.recordId} />
+                          <input type="hidden" name="paymentId" value={p.id} />
+                          <ConfirmButton
+                            message={`Undo payment of ${formatMoney(p.amount)} for ${paymentLabel(p)}? The fee will show as unpaid/partial again.`}
+                          >
+                            Undo
+                          </ConfirmButton>
+                        </form>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

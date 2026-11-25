@@ -93,6 +93,7 @@ export default function StudentActions({
           today={today.iso}
           defaultMonth={month}
           charges={charges}
+          monthlyFee={student.monthlyFee}
           onSuccess={close}
           onCancel={close}
         />

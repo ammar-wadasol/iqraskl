@@ -37,7 +37,8 @@ export function monthStatus(student, record, year, month, nowIdx) {
   const due = record ? record.amountDue : student.monthlyFee;
   const paid = record ? record.amountPaid : 0;
 
-  if (!record && (idx < first || idx > leftIdx)) {
+  // Outside enrollment window is never billed — even if a stray fee record exists.
+  if (idx < first || idx > leftIdx) {
     return { state: "na", due: 0, paid: 0 };
   }
   if (paid >= due) return { state: "paid", due, paid };

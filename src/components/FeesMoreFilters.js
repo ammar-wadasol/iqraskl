@@ -27,7 +27,7 @@ export default function FeesMoreFilters({ filters, year }) {
   }, [open]);
 
   // Close after Apply navigates and the URL filters change.
-  const filterKey = `${filters.status}|${filters.name}|${filters.studentId}|${filters.fatherName}|${filters.unpaidMonth ?? ""}|${year}`;
+  const filterKey = `${filters.status}|${filters.name}|${filters.studentId}|${filters.fatherName}|${filters.className || ""}|${filters.unpaidMonth ?? ""}|${year}`;
   const filterKeyRef = useRef(filterKey);
   useEffect(() => {
     if (filterKeyRef.current !== filterKey) {
@@ -73,6 +73,9 @@ export default function FeesMoreFilters({ filters, year }) {
             ) : null}
             {filters.fatherName ? (
               <input type="hidden" name="fatherName" value={filters.fatherName} />
+            ) : null}
+            {filters.className ? (
+              <input type="hidden" name="className" value={filters.className} />
             ) : null}
             {filters.unpaidMonth ? (
               <input type="hidden" name="unpaidMonth" value={filters.unpaidMonth} />

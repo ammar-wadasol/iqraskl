@@ -1,19 +1,32 @@
 import Form from "next/form";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Search, X } from "lucide-react";
 import FeesMoreFilters from "@/components/FeesMoreFilters";
+import { CLASS_OPTIONS } from "@/lib/classes";
 import { MONTHS, monthLabel } from "@/lib/format";
 
-function feesHref({ filters, year, unpaidMonth }) {
+function feesParams({ filters, year, unpaidMonth }) {
   const params = new URLSearchParams();
   if (filters.name) params.set("name", filters.name);
   if (filters.studentId) params.set("studentId", filters.studentId);
   if (filters.fatherName) params.set("fatherName", filters.fatherName);
+  if (filters.className) params.set("className", filters.className);
   if (filters.status) params.set("status", filters.status);
   params.set("year", String(year));
   if (unpaidMonth) params.set("unpaidMonth", String(unpaidMonth));
-  const qs = params.toString();
+  return params;
+}
+
+function feesHref({ filters, year, unpaidMonth }) {
+  const qs = feesParams({ filters, year, unpaidMonth }).toString();
   return qs ? `/fees?${qs}` : "/fees";
+}
+
+function challansHref({ filters, year }) {
+  const params = feesParams({ filters, year, unpaidMonth: null });
+  params.delete("unpaidMonth");
+  const qs = params.toString();
+  return qs ? `/fees/challans/pdf?${qs}` : "/fees/challans/pdf";
 }
 
 function shiftMonth(year, month, delta) {
@@ -24,11 +37,11 @@ function shiftMonth(year, month, delta) {
   };
 }
 
-export default function FeesToolbar({ filters, year, focusMonth, unpaidCount, legend }) {
+export default function FeesToolbar({ filters, year, focusMonth, unpaidCount }) {
   const prev = shiftMonth(year, focusMonth, -1);
   const next = shiftMonth(year, focusMonth, 1);
   const clearHref = feesHref({
-    filters: { name: "", studentId: "", fatherName: "", status: "active" },
+    filters: { name: "", studentId: "", fatherName: "", className: "", status: "active" },
     year,
     unpaidMonth: null,
   });
@@ -40,7 +53,7 @@ export default function FeesToolbar({ filters, year, focusMonth, unpaidCount, le
       <Form
         key={resetKey}
         action="/fees"
-        className="card grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]"
+        className="card grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
       >
         <input type="hidden" name="year" value={year} />
         <input type="hidden" name="status" value={filters.status} />
@@ -52,13 +65,13 @@ export default function FeesToolbar({ filters, year, focusMonth, unpaidCount, le
           <input id="f-name" name="name" defaultValue={filters.name} className="input" placeholder="Search name" />
         </div>
         <div>
-          <label htmlFor="f-sid" className="label">Student ID</label>
+          <label htmlFor="f-sid" className="label">Roll no</label>
           <input
             id="f-sid"
             name="studentId"
             defaultValue={filters.studentId}
             className="input"
-            placeholder="Search ID"
+            placeholder="Search roll no"
           />
         </div>
         <div>
@@ -70,6 +83,17 @@ export default function FeesToolbar({ filters, year, focusMonth, unpaidCount, le
             className="input"
             placeholder="Search father name"
           />
+        </div>
+        <div>
+          <label htmlFor="f-class" className="label">Class</label>
+          <select id="f-class" name="className" defaultValue={filters.className || ""} className="input">
+            <option value="">All classes</option>
+            {CLASS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex items-end gap-2">
           <button type="submit" className="btn btn-primary flex-1">
@@ -128,7 +152,14 @@ export default function FeesToolbar({ filters, year, focusMonth, unpaidCount, le
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {legend}
+          <a
+            href={challansHref({ filters, year })}
+            className="btn btn-primary"
+            title="Download 4-up fee challans for students matching these filters"
+          >
+            <Printer className="size-4" aria-hidden="true" />
+            Print challans
+          </a>
           <FeesMoreFilters filters={filters} year={year} />
         </div>
       </div>

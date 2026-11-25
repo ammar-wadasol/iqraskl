@@ -12,13 +12,14 @@ export default function FilterBar({ action, filters, extra = {} }) {
       {Object.entries(extra).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
+      {filters.defaulters ? <input type="hidden" name="defaulters" value="1" /> : null}
       <div>
         <label htmlFor="f-name" className="label">Student name</label>
         <input id="f-name" name="name" defaultValue={filters.name} className="input" placeholder="Search name" />
       </div>
       <div>
-        <label htmlFor="f-sid" className="label">Student ID</label>
-        <input id="f-sid" name="studentId" defaultValue={filters.studentId} className="input" placeholder="Search ID" />
+        <label htmlFor="f-sid" className="label">Roll no</label>
+        <input id="f-sid" name="studentId" defaultValue={filters.studentId} className="input" placeholder="Search roll no" />
       </div>
       <div>
         <label htmlFor="f-father" className="label">Father name</label>

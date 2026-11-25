@@ -21,7 +21,7 @@ import {
 } from "@/lib/validation";
 
 const studentFields = {
-  studentId: requiredText("Student ID", 40),
+  studentId: requiredText("Roll no", 40),
   name: requiredText("Name"),
   fatherName: requiredText("Father name"),
   cnic: pakistanCnic,
@@ -55,7 +55,7 @@ const updateSchema = z
   });
 
 function duplicateIdError(error) {
-  return error?.code === 11000 ? { error: "A student with this Student ID already exists." } : null;
+  return error?.code === 11000 ? { error: "A student with this roll no already exists." } : null;
 }
 
 export async function createStudent(_prevState, formData) {

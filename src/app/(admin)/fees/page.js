@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import FeesMonthPay from "@/components/FeesMonthPay";
 import FeesToolbar from "@/components/FeesToolbar";
 import Loading from "@/components/Loading";
-import { MonthCell, MonthLegend } from "@/components/MonthCell";
 import Pagination from "@/components/Pagination";
 import { PAGE_SIZE, getFeeCalendar, parseFeeFilters } from "@/lib/data";
 import { getToday } from "@/lib/dates";
-import { MONTHS, formatMoney, monthLabel } from "@/lib/format";
+import { MONTHS, formatMoney, formatMoneyCompact, monthLabel } from "@/lib/format";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Fees calendar · Iqra School Office" };
@@ -46,25 +46,28 @@ async function FeesCalendar({ searchParams }) {
         year={year}
         focusMonth={focusMonth}
         unpaidCount={filters.unpaidMonth ? total : null}
-        legend={<MonthLegend />}
       />
       <div className="card overflow-x-auto p-0">
-        <table className="table-base">
+        <table className="table-base w-max min-w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-48 bg-slate-50">Student</th>
+              <th className="sticky left-0 z-20 w-36 bg-slate-50 !px-2 sm:w-44">Student</th>
               {MONTHS.map((m, i) => (
                 <th
                   key={m}
-                  className={`text-center ${
+                  className={`w-11 !px-0.5 text-center text-[10px] tracking-normal sm:w-12 ${
                     focusMonth === i + 1 ? "bg-emerald-50 text-emerald-900" : ""
                   }`}
                 >
                   {m}
                 </th>
               ))}
-              <th className="text-right">Paid {year}</th>
-              <th className="text-right">Pending {year}</th>
+              <th className="sticky right-16 z-20 w-16 max-w-16 bg-slate-50 !px-1 text-right text-[10px] tracking-normal">
+                Paid {year}
+              </th>
+              <th className="sticky right-0 z-20 w-16 max-w-16 bg-slate-50 !px-1 text-right text-[10px] tracking-normal">
+                Pending {year}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -79,34 +82,44 @@ async function FeesCalendar({ searchParams }) {
             )}
             {students.map((s) => (
               <tr key={s.id}>
-                <td className="sticky left-0 z-10 bg-white">
+                <td className="sticky left-0 z-10 bg-white !px-2">
                   <Link
                     href={`/students/${s.id}?year=${year}`}
                     className="font-medium text-emerald-700 hover:underline"
                   >
                     {s.name}
                   </Link>
-                  <p className="text-xs text-slate-500">
-                    <span className="font-mono">{s.studentId}</span> · {s.fatherName} · {s.className}
+                  <p className="truncate text-xs text-slate-500">
+                    <span className="font-mono">{s.studentId}</span> · {s.fatherName}
                   </p>
                 </td>
                 {s.months.map((m, i) => (
                   <td
                     key={MONTHS[i]}
-                    className={`px-1 ${focusMonth === i + 1 ? "bg-emerald-50/50" : ""}`}
+                    className={`!px-0.5 !py-1.5 ${focusMonth === i + 1 ? "bg-emerald-50/50" : ""}`}
                   >
-                    <MonthCell
+                    <FeesMonthPay
                       status={m}
-                      href={`/students/${s.id}?pay=${year}-${String(i + 1).padStart(2, "0")}`}
+                      studentId={s.id}
+                      studentName={s.name}
+                      monthlyFee={s.monthlyFee}
+                      payMonth={`${year}-${String(i + 1).padStart(2, "0")}`}
+                      today={today.iso}
                       title={`${s.name} · ${monthLabel(year, i + 1)}: paid ${formatMoney(m.paid)} of ${formatMoney(m.due)}`}
                     />
                   </td>
                 ))}
-                <td className="text-right whitespace-nowrap text-emerald-700">
-                  {formatMoney(s.yearPaid)}
+                <td
+                  className="sticky right-16 z-10 w-16 max-w-16 bg-white !px-1 text-right text-[11px] whitespace-nowrap text-emerald-700"
+                  title={formatMoney(s.yearPaid)}
+                >
+                  {formatMoneyCompact(s.yearPaid)}
                 </td>
-                <td className="text-right whitespace-nowrap text-red-700">
-                  {formatMoney(s.yearPending)}
+                <td
+                  className="sticky right-0 z-10 w-16 max-w-16 bg-white !px-1 text-right text-[11px] whitespace-nowrap text-red-700"
+                  title={formatMoney(s.yearPending)}
+                >
+                  {formatMoneyCompact(s.yearPending)}
                 </td>
               </tr>
             ))}

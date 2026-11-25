@@ -49,7 +49,7 @@ export async function buildClassListPdf(data) {
 
   const cols = [
     { label: "#", x: margin + 4, key: "n" },
-    { label: "Student ID", x: margin + 28, key: "id" },
+    { label: "Roll no", x: margin + 28, key: "id" },
     { label: "Name", x: margin + 105, key: "name" },
     { label: "Father name", x: margin + 250, key: "father" },
     { label: "Phone", x: margin + 380, key: "phone" },

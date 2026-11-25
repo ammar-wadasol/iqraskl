@@ -17,13 +17,14 @@ export function parseProductFilters(searchParams) {
   };
 }
 
-export const PRODUCT_PAGE_SIZE = 20;
+export const PRODUCT_PAGE_SIZE = 30;
 
 export async function listActiveStudentsForSale() {
   await connectDB();
   const students = await Student.find({ status: "active" })
     .select("studentId name fatherName className")
-    .sort({ name: 1, studentId: 1 })
+    .collation({ locale: "en", numericOrdering: true })
+    .sort({ studentId: 1 })
     .lean();
   return students.map((s) => ({
     id: String(s._id),
@@ -96,7 +97,8 @@ export async function getProductDetail(id) {
     ProductSale.find({ product: id }).sort({ soldOn: -1, createdAt: -1 }).lean(),
     Student.find({ status: "active" })
       .select("studentId name fatherName className")
-      .sort({ name: 1, studentId: 1 })
+      .collation({ locale: "en", numericOrdering: true })
+      .sort({ studentId: 1 })
       .lean(),
   ]);
 

@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE = "iqra_session";
+export const ROLES = ["admin", "user"];
 
 function getKey() {
   const secret = process.env.SESSION_SECRET;
@@ -10,8 +11,11 @@ function getKey() {
   return new TextEncoder().encode(secret);
 }
 
-export function signToken(expiresAt) {
-  return new SignJWT({ role: "admin" })
+export function signToken(expiresAt, role = "admin") {
+  if (!ROLES.includes(role)) {
+    throw new Error(`Invalid role: ${role}`);
+  }
+  return new SignJWT({ role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(expiresAt)
@@ -24,7 +28,7 @@ export async function verifyToken(token) {
     const { payload } = await jwtVerify(token, getKey(), {
       algorithms: ["HS256"],
     });
-    return payload.role === "admin" ? payload : null;
+    return ROLES.includes(payload.role) ? payload : null;
   } catch {
     return null;
   }

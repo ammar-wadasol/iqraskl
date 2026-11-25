@@ -8,7 +8,8 @@ Fee records for the school admin office. Next.js (JavaScript only) + MongoDB Atl
 2. Copy `.env.example` to `.env.local` and fill in:
    - `MONGODB_URI` – Atlas connection string including the database name (e.g. `/iqra`).
      In Atlas, allow your server's IP under Network Access.
-   - `ADMIN_PASSWORD` – password the office uses to sign in.
+   - `ADMIN_PASSWORD` – password for Admin sign-in (full dashboard).
+   - `USER_PASSWORD` – password for User sign-in (same access; dashboard shows only the unpaid table).
    - `SESSION_SECRET` – at least 32 random characters (`openssl rand -base64 48`).
    - `APP_TIMEZONE` – defaults to `Asia/Karachi`; decides what "this month" is.
 3. `npm run dev` for development, or `npm run build && npm start` for production.

@@ -7,7 +7,11 @@ import { Student } from "./models/Student";
 import { FeeRecord } from "./models/FeeRecord";
 import { ProductSale } from "./models/ProductSale";
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 30;
+
+/** Roll number (studentId) with numeric order: iqr-2 before iqr-10. */
+export const STUDENT_SORT = { studentId: 1 };
+export const STUDENT_COLLATION = { locale: "en", numericOrdering: true };
 
 const RECORD_TOTALS = "student type year month amountDue amountPaid";
 
@@ -31,11 +35,12 @@ export function parseFilters(searchParams) {
     fatherName: text(searchParams.fatherName),
     className: text(searchParams.className),
     status,
+    defaulters: searchParams.defaulters === "1" || searchParams.defaulters === "true",
     page: Number.isFinite(page) && page > 0 ? page : 1,
   };
 }
 
-function buildStudentQuery(filters) {
+export function buildStudentQuery(filters) {
   const query = {};
   if (filters.status !== "all") query.status = filters.status;
   if (filters.className) query.className = filters.className;
@@ -45,6 +50,16 @@ function buildStudentQuery(filters) {
     }
   }
   return query;
+}
+
+/** All students matching filters (no pagination) — used for bulk fee challans. */
+export async function listStudentsForChallans(filters) {
+  await connectDB();
+  const docs = await Student.find(buildStudentQuery(filters))
+    .collation(STUDENT_COLLATION)
+    .sort(STUDENT_SORT)
+    .lean();
+  return docs.map(toPlainStudent);
 }
 
 function toPlainStudent(s) {
@@ -70,7 +85,8 @@ async function findStudentsPage(filters) {
   const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
   const page = Math.min(filters.page, pageCount);
   const students = await Student.find(query)
-    .sort({ name: 1, studentId: 1 })
+    .collation(STUDENT_COLLATION)
+    .sort(STUDENT_SORT)
     .skip((page - 1) * PAGE_SIZE)
     .limit(PAGE_SIZE)
     .lean();
@@ -80,6 +96,43 @@ async function findStudentsPage(filters) {
 export async function listStudents(filters) {
   const { year, month } = getToday();
   const nowIdx = monthIndex(year, month);
+
+  if (filters.defaulters) {
+    await connectDB();
+    const all = (
+      await Student.find(buildStudentQuery(filters))
+        .collation(STUDENT_COLLATION)
+        .sort(STUDENT_SORT)
+        .lean()
+    ).map(toPlainStudent);
+    const records = await FeeRecord.find({
+      student: { $in: all.map((s) => s.id) },
+    })
+      .select(RECORD_TOTALS)
+      .lean();
+    const groups = groupRecords(records);
+    const withSummary = all.map((s) => ({
+      ...s,
+      summary: summarizeStudent(s, groups.get(s.id), nowIdx),
+    }));
+    const defaulters = withSummary
+      .filter((s) => s.summary.totalPending > 0)
+      .sort(
+        (a, b) =>
+          b.summary.totalPending - a.summary.totalPending ||
+          b.summary.monthsBehind - a.summary.monthsBehind,
+      );
+    const total = defaulters.length;
+    const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+    const page = Math.min(filters.page, pageCount);
+    return {
+      total,
+      page,
+      pageCount,
+      students: defaulters.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    };
+  }
+
   const result = await findStudentsPage(filters);
 
   const records = await FeeRecord.find({
@@ -123,9 +176,9 @@ export async function getFeeCalendar(filters, year) {
 
   if (filters.unpaidMonth) {
     // Need the full matching set first so pagination counts only unpaid students.
-    const all = (await Student.find(query).sort({ name: 1, studentId: 1 }).lean()).map(
-      toPlainStudent,
-    );
+    const all = (
+      await Student.find(query).collation(STUDENT_COLLATION).sort(STUDENT_SORT).lean()
+    ).map(toPlainStudent);
     const monthRecords = await FeeRecord.find({
       student: { $in: all.map((s) => s.id) },
       type: "monthly",
@@ -299,6 +352,7 @@ export async function getDashboardStats() {
     unpaidThisMonthCount: unpaidThisMonth.length,
     behindTwoOrMore,
     unpaidThisMonth: unpaidThisMonth.slice(0, 10),
+    unpaidThisMonthAll: unpaidThisMonth,
     byType,
     collectedByMonth,
   };
@@ -358,7 +412,8 @@ export async function getStudentDetail(id) {
       cnic: student.cnic,
       _id: { $ne: raw._id },
     })
-      .sort({ name: 1, studentId: 1 })
+      .collation(STUDENT_COLLATION)
+      .sort(STUDENT_SORT)
       .lean();
     if (siblingDocs.length > 0) {
       const siblingIds = siblingDocs.map((s) => String(s._id));
@@ -393,6 +448,9 @@ export async function listStudentsByClass(className, status = "active") {
   await connectDB();
   const query = { className };
   if (status !== "all") query.status = status;
-  const students = await Student.find(query).sort({ name: 1, studentId: 1 }).lean();
+  const students = await Student.find(query)
+    .collation(STUDENT_COLLATION)
+    .sort(STUDENT_SORT)
+    .lean();
   return students.map(toPlainStudent);
 }

@@ -32,10 +32,71 @@ function StatCard({ label, value, hint, tone = "slate" }) {
   );
 }
 
+function UnpaidTable({ stats, today, showAll = false }) {
+  const rows = showAll ? stats.unpaidThisMonthAll : stats.unpaidThisMonth;
+  return (
+    <section className="card">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="font-semibold">
+          Not paid for {monthLabel(today.year, today.month)}
+        </h2>
+        <Link href="/fees" className="text-sm text-emerald-700 hover:underline">
+          Open fees calendar
+        </Link>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-sm text-slate-500">Every active student has paid this month.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th>Roll no</th>
+                <th>Name</th>
+                <th>Father name</th>
+                <th>Class</th>
+                <th className="text-right">Months behind</th>
+                <th className="text-right">Monthly pending</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((s) => (
+                <tr key={s.id}>
+                  <td className="font-mono text-xs">{s.studentId}</td>
+                  <td>
+                    <Link href={`/students/${s.id}`} className="text-emerald-700 hover:underline">
+                      {s.name}
+                    </Link>
+                  </td>
+                  <td>{s.fatherName}</td>
+                  <td>{s.className}</td>
+                  <td className="text-right">{s.monthsBehind}</td>
+                  <td className="text-right text-red-700">{formatMoney(s.pending)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!showAll && stats.unpaidThisMonthCount > stats.unpaidThisMonth.length && (
+            <p className="mt-2 text-xs text-slate-500">
+              Showing the {stats.unpaidThisMonth.length} furthest behind of {stats.unpaidThisMonthCount}.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 async function Dashboard() {
-  await requireAdmin();
+  const session = await requireAdmin();
   const stats = await getDashboardStats();
   const { today } = stats;
+  const isUser = session.role === "user";
+
+  if (isUser) {
+    return <UnpaidTable stats={stats} today={today} showAll />;
+  }
+
   const maxCollected = Math.max(...stats.collectedByMonth, 1);
   const typeRows = [
     ["Admission fees", stats.byType.admission],
@@ -149,55 +210,7 @@ async function Dashboard() {
         </section>
       </div>
 
-      <section className="card">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-semibold">
-            Not paid for {monthLabel(today.year, today.month)}
-          </h2>
-          <Link href="/fees" className="text-sm text-emerald-700 hover:underline">
-            Open fees calendar
-          </Link>
-        </div>
-        {stats.unpaidThisMonth.length === 0 ? (
-          <p className="text-sm text-slate-500">Every active student has paid this month.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table-base">
-              <thead>
-                <tr>
-                  <th>Student ID</th>
-                  <th>Name</th>
-                  <th>Father name</th>
-                  <th>Class</th>
-                  <th className="text-right">Months behind</th>
-                  <th className="text-right">Monthly pending</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.unpaidThisMonth.map((s) => (
-                  <tr key={s.id}>
-                    <td className="font-mono text-xs">{s.studentId}</td>
-                    <td>
-                      <Link href={`/students/${s.id}`} className="text-emerald-700 hover:underline">
-                        {s.name}
-                      </Link>
-                    </td>
-                    <td>{s.fatherName}</td>
-                    <td>{s.className}</td>
-                    <td className="text-right">{s.monthsBehind}</td>
-                    <td className="text-right text-red-700">{formatMoney(s.pending)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {stats.unpaidThisMonthCount > stats.unpaidThisMonth.length && (
-              <p className="mt-2 text-xs text-slate-500">
-                Showing the {stats.unpaidThisMonth.length} furthest behind of {stats.unpaidThisMonthCount}.
-              </p>
-            )}
-          </div>
-        )}
-      </section>
+      <UnpaidTable stats={stats} today={today} />
     </>
   );
 }

@@ -37,7 +37,7 @@ export default function StudentForm({ student, today, onSuccess, onCancel }) {
     <form ref={formRef} onSubmit={onSubmit} className="space-y-4">
       {isEdit && <input type="hidden" name="id" value={student.id} />}
       <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${isEdit ? "" : "lg:grid-cols-3"}`}>
-        <Field label="Student ID" name="studentId">
+        <Field label="Roll no" name="studentId">
           <input id="sf-studentId" name="studentId" required maxLength={40} defaultValue={student?.studentId} className="input" />
         </Field>
         <Field label="Student name" name="name">

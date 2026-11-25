@@ -17,18 +17,28 @@ const LABELS = {
   na: "—",
 };
 
-export function MonthCell({ status, href, title, scroll }) {
+function cellAmount(status, compact) {
+  const value = status.paid > 0 ? status.paid : status.due;
+  if (compact) return String(value || 0);
+  return formatMoney(value);
+}
+
+export function MonthCell({ status, href, title, scroll, compact = false }) {
   const content = (
     <>
-      <span className="block text-[11px] font-semibold">{LABELS[status.state]}</span>
+      <span className={`block font-semibold ${compact ? "text-[9px]" : "text-[11px]"}`}>
+        {LABELS[status.state]}
+      </span>
       {status.state !== "na" && (
-        <span className="block text-[11px]">
-          {status.paid > 0 ? formatMoney(status.paid) : formatMoney(status.due)}
+        <span className={`block ${compact ? "text-[9px]" : "text-[11px]"}`}>
+          {cellAmount(status, compact)}
         </span>
       )}
     </>
   );
-  const className = `block min-w-[4.5rem] rounded border px-1.5 py-1 text-center leading-tight ${STYLES[status.state]}`;
+  const className = compact
+    ? `block w-full min-w-0 rounded border px-0.5 py-0.5 text-center leading-tight ${STYLES[status.state]}`
+    : `block min-w-[4.5rem] rounded border px-1.5 py-1 text-center leading-tight ${STYLES[status.state]}`;
 
   if (!href || status.state === "na") {
     return <div className={className} title={title}>{content}</div>;

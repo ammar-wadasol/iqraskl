@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Printer, UserPlus } from "lucide-react";
+import { AlertTriangle, Printer, UserPlus, X } from "lucide-react";
 import FilterBar from "@/components/FilterBar";
 import Loading from "@/components/Loading";
 import Pagination from "@/components/Pagination";
@@ -18,20 +18,64 @@ const MONTH_BADGES = {
   na: ["—", "bg-slate-100 text-slate-500"],
 };
 
+function studentsHref(filters, { defaulters } = {}) {
+  const params = new URLSearchParams();
+  if (filters.name) params.set("name", filters.name);
+  if (filters.studentId) params.set("studentId", filters.studentId);
+  if (filters.fatherName) params.set("fatherName", filters.fatherName);
+  if (filters.className) params.set("className", filters.className);
+  if (filters.status && filters.status !== "active") params.set("status", filters.status);
+  const showDefaulters = defaulters ?? filters.defaulters;
+  if (showDefaulters) params.set("defaulters", "1");
+  const qs = params.toString();
+  return qs ? `/students?${qs}` : "/students";
+}
+
 export default function StudentsPage({ searchParams }) {
   return (
     <>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Students</h1>
-        <Link href="/students/new" className="btn btn-primary">
-          <UserPlus className="size-4" aria-hidden="true" />
-          Add student
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Suspense fallback={null}>
+            <DefaultersToggle searchParams={searchParams} />
+          </Suspense>
+          <Link href="/students/new" className="btn btn-primary">
+            <UserPlus className="size-4" aria-hidden="true" />
+            Add student
+          </Link>
+        </div>
       </div>
       <Suspense fallback={<Loading label="Loading students…" />}>
         <StudentsList searchParams={searchParams} />
       </Suspense>
     </>
+  );
+}
+
+async function DefaultersToggle({ searchParams }) {
+  const filters = parseFilters(await searchParams);
+  if (filters.defaulters) {
+    return (
+      <Link
+        href={studentsHref(filters, { defaulters: false })}
+        className="btn border-red-300 bg-red-50 text-red-800 hover:bg-red-100"
+        title="Show all students"
+      >
+        <X className="size-4" aria-hidden="true" />
+        Clear defaulters
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href={studentsHref(filters, { defaulters: true })}
+      className="btn border-red-200 text-red-800 hover:bg-red-50"
+      title="Students with remaining fees"
+    >
+      <AlertTriangle className="size-4" aria-hidden="true" />
+      Defaulters
+    </Link>
   );
 }
 
@@ -43,9 +87,25 @@ async function StudentsList({ searchParams }) {
     ? `/students/class-list/pdf?className=${encodeURIComponent(filters.className)}&status=${encodeURIComponent(filters.status)}`
     : null;
 
+  const paginationQuery = {
+    ...filters,
+    defaulters: filters.defaulters ? "1" : "",
+  };
+
   return (
     <>
       <FilterBar action="/students" filters={filters} />
+      {filters.defaulters && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-100 bg-red-50/70 px-3 py-2 text-sm text-red-900">
+          <p>
+            Showing <span className="font-medium">defaulters</span>
+            {total > 0 ? ` · ${total} student${total === 1 ? "" : "s"} with remaining fees` : ""}
+          </p>
+          <Link href={studentsHref(filters, { defaulters: false })} className="btn text-xs">
+            Show all
+          </Link>
+        </div>
+      )}
       {printHref && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900">
           <p>
@@ -62,7 +122,7 @@ async function StudentsList({ searchParams }) {
         <table className="table-base">
           <thead>
             <tr>
-              <th>Student ID</th>
+              <th>Roll no</th>
               <th>Name</th>
               <th>Father name</th>
               <th>Class</th>
@@ -111,7 +171,7 @@ async function StudentsList({ searchParams }) {
       </div>
       <Pagination
         pathname="/students"
-        query={filters}
+        query={paginationQuery}
         page={page}
         pageCount={pageCount}
         total={total}

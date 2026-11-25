@@ -39,11 +39,14 @@ export async function drawSchoolHeader(
     left = PDF_PAGE.margin,
     width = PDF_PAGE.width - PDF_PAGE.margin * 2,
     logoSize = 36,
+    titleSize = 10,
+    metaSize = 7,
+    topPad = 0,
   } = {},
 ) {
   const { muted, line, ink } = PDF_COLORS;
   const { font, fontBold } = fonts;
-  let y = top;
+  let y = top - topPad;
 
   const logoBytes = loadSchoolLogoBytes();
   const logo = await pdf.embedPng(logoBytes);
@@ -54,8 +57,11 @@ export async function drawSchoolHeader(
     height: logoSize,
   });
 
-  const textLeft = left + logoSize + 8;
-  const textWidth = width - logoSize - 8;
+  const textLeft = left + logoSize + 6;
+  const textWidth = width - logoSize - 6;
+  const nameY = y - Math.max(titleSize + 2, 12);
+  const addrY = nameY - (metaSize + 3);
+  const contactY = addrY - (metaSize + 3);
 
   function centered(value, atY, size, bold = false, color = ink) {
     const f = bold ? fontBold : font;
@@ -69,19 +75,19 @@ export async function drawSchoolHeader(
     });
   }
 
-  centered(SCHOOL.name, y - 12, 10, true, ink);
-  centered(SCHOOL.address, y - 23, 7, false, muted);
-  centered(`${SCHOOL.phone}  |  ${SCHOOL.email}`, y - 33, 7, false, muted);
+  centered(SCHOOL.name, nameY, titleSize, true, ink);
+  centered(SCHOOL.address, addrY, metaSize, false, muted);
+  centered(`${SCHOOL.phone}  |  ${SCHOOL.email}`, contactY, metaSize, false, muted);
 
   // Sit below both the logo and the contact line (baseline + a little gap).
-  y = Math.min(y - logoSize, y - 33 - 8);
+  y = Math.min(y - logoSize, contactY - 6);
   page.drawLine({
     start: { x: left, y },
     end: { x: left + width, y },
     thickness: 0.8,
     color: line,
   });
-  return y - 8;
+  return y - 6;
 }
 
 export function drawText(page, fonts, value, x, y, size = 10, opts = {}) {

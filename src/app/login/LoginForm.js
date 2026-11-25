@@ -9,7 +9,14 @@ export default function LoginForm() {
   return (
     <form action={formAction} className="space-y-4">
       <div>
-        <label htmlFor="password" className="label">Admin password</label>
+        <label htmlFor="role" className="label">Sign in as</label>
+        <select id="role" name="role" defaultValue="admin" className="input">
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+      </div>
+      <div>
+        <label htmlFor="password" className="label">Password</label>
         <input
           id="password"
           name="password"

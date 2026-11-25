@@ -146,14 +146,18 @@ export async function deletePayment(formData) {
   await connectDB();
   const record = await FeeRecord.findOne(
     { _id: recordId, "payments._id": paymentId },
-    { "payments.$": 1 },
+    { amountPaid: 1, "payments.$": 1 },
   ).lean();
   const paid = record?.payments?.[0]?.amount;
   if (paid === undefined) return;
 
+  const nextPaid = Math.max((record.amountPaid || 0) - paid, 0);
   await FeeRecord.updateOne(
     { _id: recordId, "payments._id": paymentId },
-    { $pull: { payments: { _id: paymentId } }, $inc: { amountPaid: -paid } },
+    {
+      $pull: { payments: { _id: paymentId } },
+      $set: { amountPaid: nextPaid },
+    },
   );
   refresh();
 }
